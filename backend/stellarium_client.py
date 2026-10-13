@@ -24,7 +24,7 @@ def build_sky_script(latitude, longitude, utc_dt):
     parts = [
         'core.setObserverLocation(%s, %s, 0, 0, "sky-user", "Earth")' % (longitude, latitude),
         'core.setDate("%s", "utc")' % utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-        "LandscapeMgr.setFlagAtmosphere(true)",
+        "LandscapeMgr.setFlagAtmosphere(false)",
         "MilkyWay.setFlagShow(true)",
         "SolarSystem.setFlagPlanets(true)",
         "ConstellationMgr.setFlagLabels(false)",
