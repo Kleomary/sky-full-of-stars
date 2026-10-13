@@ -97,7 +97,7 @@ async def proxy(path: str, request: Request):
     return Response(content=content, status_code=resp.get("status", 502), media_type=media_type)
 
 
-@app.get("/file")
+@app.get("/stellarium/file")  # base_url клиента уже содержит /stellarium
 async def fetch_file(request: Request):
     """Отдать PNG из каталога снимков Mac: агент ищет по префиксу и удаляет после чтения."""
     if conn is None or conn.ws is None:
