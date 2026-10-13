@@ -4,6 +4,8 @@
 /* ================== Константы ================== */
 
 var CITIES_URL = "cities.json";
+var SKY_API_URL = "https://sky-full-of-stars-api.onrender.com/api/sky-screenshot";
+var SKY_API_TIMEOUT_MS = 90000;
 var CUSTOM_OPTION = "__custom__";
 var YANDEX_MAPS_URL = "https://yandex.ru/maps";
 
@@ -28,7 +30,10 @@ var state = {
   mode: "city",                 // "city" | "custom"
   city: null,                   // объект города из справочника
   coords: null,                 // {lat, lon} для режима координат
-  lastFile: null                // {name, text} последнего .ssc
+  lastFile: null,
+  lastPngUrl: null,
+  lastSlug: null,
+  lastFileBase: null                // {name, text} последнего .ssc
 };
 
 var el = {};
@@ -315,7 +320,8 @@ function initDomRefs() {
     result: $("result"),
     resultFile: $("result-file"),
     resultSummary: $("result-summary"),
-    btnRedownload: $("btn-redownload"),
+    skyImage: $("sky-image"),
+  downloadPng: $("btn-download-png"),
     notifications: $("notifications"),
     metaDate: $("meta-date"),
     metaPlace: $("meta-place"),
@@ -557,31 +563,35 @@ function onSubmit(evt) {
   var utcMs = localToUtcMs(dp.y, dp.mo, dp.d, tp.h, tp.mi, currentTzInfo());
   var tzLabel = tzLabelFor(utcMs);
 
-  var fileName = buildFileName(slug, dp, tp);
-  var ssc = buildSsc({
-    placeName: placeName, lat: lat, lon: lon,
-    date: dp, time: tp, utcMs: utcMs, tzLabel: tzLabel, slug: slug
-  });
+  var req = {
+    source: state.mode === "city" ? "city" : "coordinates",
+    cityId: state.mode === "city" && state.city ? state.city.slug : null,
+    latitude: lat,
+    longitude: lon,
+    localDate: pad(dp.d) + "." + pad(dp.mo) + "." + pad(dp.y, 4),
+    localTime: pad(tp.h) + ":" + pad(tp.mi),
+    timeZone: getTimeZoneIana()
+  };
 
-  state.lastFile = { name: fileName, text: ssc };
-  downloadFile(fileName, ssc);
+  showResult({ placeName: placeName, lat: lat, lon: lon, date: dp, time: tp, utcMs: utcMs, tzLabel: tzLabel });
 
-  showResult({ placeName: placeName, lat: lat, lon: lon, date: dp, time: tp, utcMs: utcMs, tzLabel: tzLabel, fileName: fileName });
-  notify("Файл " + fileName + " сформирован", "success");
-  el.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  state.lastSlug = slug;
+  state.lastFileBase = "sky-" + slug + "-" + pad(dp.y, 4) + "-" + pad(dp.mo) + "-" + pad(dp.d) +
+    "-" + pad(tp.h) + "-" + pad(tp.mi);
+
+  requestSky(req);
+
 }
 
 function showResult(r) {
   var u = utcPartsOf(r.utcMs);
-  el.resultFile.textContent = r.fileName;
   el.resultSummary.innerHTML = "";
   var rows = [
     ["Место", r.placeName],
     ["Координаты", coordToString(r.lat) + ", " + coordToString(r.lon)],
     ["Местное время", pad(r.date.d) + "." + pad(r.date.mo) + "." + pad(r.date.y, 4) + " " +
       pad(r.time.h) + ":" + pad(r.time.mi) + " (" + r.tzLabel + ")"],
-    ["UTC", pad(u.y, 4) + "-" + pad(u.mo) + "-" + pad(u.d) + " " + pad(u.h) + ":" + pad(u.mi) + ":" + pad(u.s)],
-    ["Файл", r.fileName]
+    ["UTC", pad(u.y, 4) + "-" + pad(u.mo) + "-" + pad(u.d) + " " + pad(u.h) + ":" + pad(u.mi) + ":" + pad(u.s)]
   ];
   rows.forEach(function (row) {
     var dt = document.createElement("dt");
@@ -592,6 +602,86 @@ function showResult(r) {
     el.resultSummary.appendChild(dd);
   });
   el.result.hidden = false;
+}
+
+/* ================== Запрос к API рендеринга ================== */
+
+function getTimeZoneIana() {
+  var info = currentTzInfo();
+  if (!info) return "Etc/GMT-0";
+  if (info.kind === "iana") return info.tz;
+  var h = Math.round(info.offsetMin / 60);
+  if (h === 0) return "Etc/GMT-0";
+  return "Etc/GMT" + (h > 0 ? "-" + h : "+" + (-h));
+}
+
+function setSubmitBusy(busy) {
+  var btn = el.form.querySelector('button[type="submit"]');
+  if (btn) {
+    btn.disabled = busy;
+    btn.textContent = busy ? "Рендерим небо… ждите" : "Показать небо";
+  }
+}
+
+function requestSky(req) {
+  setSubmitBusy(true);
+  notify("Рендерим небо… первый запрос после паузы может занять до минуты", "success");
+
+  var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, SKY_API_TIMEOUT_MS) : null;
+
+  fetch(SKY_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+    signal: ctrl ? ctrl.signal : undefined
+  })
+    .then(function (res) {
+      if (res.status === 200) {
+        return res.blob().then(function (b) { showSkyImage(b); });
+      }
+      return res.json().catch(function () { return null; })
+        .then(function (body) { handleApiError(res.status, body); });
+    })
+    .catch(function () {
+      notify("Сервер не ответил за отведённое время или недоступен. Попробуйте повторить запрос позже.", "error");
+    })
+    .finally(function () {
+      if (timer) clearTimeout(timer);
+      setSubmitBusy(false);
+    });
+}
+
+function handleApiError(status, body) {
+  if (body && body.message) { notify(body.message, "error"); return; }
+  if (status === 400 || status === 422) {
+    notify("Проверьте правильность даты, времени и координат.", "error");
+  } else if (status === 429) {
+    notify("Сервер занят: в очереди уже максимум запросов. Повторите примерно через минуту.", "error");
+  } else if (status === 503) {
+    notify("Сервис рендеринга сейчас недоступен. Попробуйте позже.", "error");
+  } else {
+    notify("Не удалось получить изображение (код " + status + "). Попробуйте позже.", "error");
+  }
+}
+
+function showSkyImage(blob) {
+  if (state.lastPngUrl) URL.revokeObjectURL(state.lastPngUrl);
+  state.lastPngUrl = URL.createObjectURL(blob);
+
+  el.skyImage.src = state.lastPngUrl;
+  el.skyImage.hidden = false;
+  el.downloadPng.hidden = false;
+  el.downloadPng.onclick = function () {
+    var a = document.createElement("a");
+    a.href = state.lastPngUrl;
+    a.download = (state.lastFileBase || "sky") + ".png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  notify("Снимок неба готов", "success");
+  el.skyImage.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function downloadFile(name, text) {
@@ -881,9 +971,6 @@ function bindEvents() {
   el.dateInput.addEventListener("input", maskDate);
   el.timeInput.addEventListener("input", maskTime);
 
-  el.btnRedownload.addEventListener("click", function () {
-    if (state.lastFile) downloadFile(state.lastFile.name, state.lastFile.text);
-  });
 
   var resizeTimer = null;
   window.addEventListener("resize", function () {

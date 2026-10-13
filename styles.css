@@ -468,3 +468,11 @@ body {
   .sky__circle { width: min(60vw, 460px); }
   .brand__name { font-size: 26px; }
 }
+
+.result__image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  margin: 12px 0;
+}

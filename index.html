@@ -113,15 +113,10 @@
       </form>
 
       <section class="result" id="result" aria-live="polite" hidden>
-        <h2 class="result__title">Сценарий для Stellarium готов</h2>
-        <p class="result__file">Файл <code id="result-file"></code> скачан.</p>
+        <h2 class="result__title">Снимок звёздного неба готов</h2>
         <dl class="result__summary" id="result-summary"></dl>
-        <ol class="result__steps">
-          <li>Откройте файл в Stellarium: двойной щелчок по файлу или меню <b>Сценарии</b> → выбрать сценарий → <b>Запустить</b>.</li>
-          <li>Дождитесь, пока установятся место, дата и вид на юг с полем зрения 180°.</li>
-          <li>Разверните окно Stellarium на весь экран и нажмите <b>Ctrl+S</b> (в macOS — <b>⌘S</b>) для сохранения PNG — размер снимка равен размеру окна.</li>
-        </ol>
-        <button type="button" class="btn-secondary" id="btn-redownload">Скачать файл ещё раз</button>
+        <img id="sky-image" class="result__image" hidden alt="Снимок звёздного неба (юг, поле зрения 180°)">
+        <button type="button" class="btn-secondary" id="btn-download-png" hidden>Скачать PNG</button>
       </section>
 
       <div class="notifications" id="notifications" aria-live="polite"></div>
