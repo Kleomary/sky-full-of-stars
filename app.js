@@ -672,6 +672,7 @@ function showSkyImage(blob) {
   if (state.lastPngUrl) URL.revokeObjectURL(state.lastPngUrl);
   state.lastPngUrl = URL.createObjectURL(blob);
 
+  el.result.hidden = false;
   el.skyImage.src = state.lastPngUrl;
   el.skyImage.hidden = false;
   el.downloadPng.hidden = false;
