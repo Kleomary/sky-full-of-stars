@@ -81,21 +81,23 @@ class StellariumClient:
                     "Сервис рендеринга занят, попробуйте повторить позже"
                 )
 
-        png_path = await self._wait_for_png(prefix)
-        with open(png_path, "rb") as f:
-            data = f.read()
-        os.remove(png_path)  # spec section 13: temp file is deleted
+        data = await self._fetch_png_via_agent(prefix)
         return data
 
-    async def _wait_for_png(self, prefix):
-        """Wait for file {prefix}*.png in the screenshot dir."""
-        deadline = time.monotonic() + self._timeout
-        pattern = os.path.join(self._output_dir, prefix + "*.png")
-        while time.monotonic() < deadline:
-            matches = sorted(glob.glob(pattern))
-            if matches:
-                return matches[0]
-            await asyncio.sleep(0.3)
+    async def _fetch_png_via_agent(self, prefix: str) -> bytes:
+        """Опросить каталог снимков через агент (путь /stellarium-file) и забрать PNG."""
+        import time as _time
+        deadline = _time.monotonic() + self._timeout
+        async with httpx.AsyncClient(timeout=10) as client:
+            while _time.monotonic() < deadline:
+                r = await client.get(
+                    f"{self._base_url}/file",
+                    params={"prefix": prefix},
+                    auth=self._auth,
+                )
+                if r.status_code == 200:
+                    return r.content
+                await asyncio.sleep(0.5)
         raise StellariumError("Не удалось получить изображение за отведённое время")
 
 
