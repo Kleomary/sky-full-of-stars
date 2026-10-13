@@ -28,6 +28,8 @@ def build_sky_script(latitude, longitude, utc_dt):
         "MilkyWay.setFlagShow(true)",
         "SolarSystem.setFlagPlanets(true)",
         "ConstellationMgr.setFlagLabels(false)",
+        "StarMgr.setFlagLabels(false)",
+        "SolarSystem.setFlagLabels(false)",
         "core.setGuiVisible(false)",
         "StelMovementMgr.lookSouth()",
         "StelMovementMgr.zoomTo(180, 0)",
