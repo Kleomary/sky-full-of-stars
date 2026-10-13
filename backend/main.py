@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, Response
 
 from backend.queue_manager import QueueFullError, sky_queue
 from backend.schemas import SkyScreenshotRequest
+from backend.stellarium_client import StellariumError, stellarium_client
 from backend.validation import ValidationError, validate_request_params
 
 app = FastAPI(
@@ -37,6 +38,14 @@ async def validation_error_handler(request: Request, exc: ValidationError):
     )
 
 
+@app.exception_handler(StellariumError)
+async def stellarium_error_handler(request: Request, exc: StellariumError):
+    return JSONResponse(
+        status_code=503,
+        content={"status": "error", "code": "RENDER_UNAVAILABLE", "message": str(exc)},
+    )
+
+
 @app.get("/")
 def root():
     return {
@@ -63,12 +72,6 @@ def queue_stats():
     }
 
 
-# Временное изображение-заглушка (минимальный валидный PNG 1x1).
-PNG_PLACEHOLDER = bytes.fromhex(
-    "89504e470d0a1a0a0000000d49484452000000010000000108020000009077"
-    "53de0000000c4944415408d763f8cfc000000301010018dd8db00000000049"
-    "454e44ae426082"
-)
 
 
 @app.post("/api/sky-screenshot")
@@ -92,17 +95,12 @@ async def sky_screenshot(req: SkyScreenshotRequest):
 
     await sky_queue.wait_turn()
     try:
-        # Пока имитация работы Stellarium; заменится вызовом worker'а (шаг 4.4)
-        if ARTIFICIAL_DELAY_SECONDS > 0:
-            await asyncio.sleep(ARTIFICIAL_DELAY_SECONDS)
-
+        # Реальный рендеринг через Stellarium RemoteControl (проверено в Codespaces)
+        data = await stellarium_client.render_sky(req.latitude, req.longitude, utc_dt)
         return Response(
-            content=PNG_PLACEHOLDER,
+            content=data,
             media_type="image/png",
-            headers={
-                "Content-Disposition": 'inline; filename="sky.png"',
-                "X-Sky-Utc-DateTime": utc_dt.isoformat(),
-            },
+            headers={"Content-Disposition": 'inline; filename="sky.png"'},
         )
     finally:
         await sky_queue.release()
