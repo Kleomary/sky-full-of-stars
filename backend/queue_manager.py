@@ -1,29 +1,29 @@
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
 from backend import config
 
 
 class QueueFullError(Exception):
-    """Очередь переполнена -> 429 Too Many Requests."""
+    """Система занята (running + waiting >= MAX_QUEUE_SIZE) -> 429."""
 
 
 @dataclass
 class QueueStats:
-    running: int = 0
-    waiting: int = 0
-    max_queue_size: int = 0
-    total_processed: int = 0
-    total_rejected: int = 0
-    last_started_at: datetime | None = None
+    running: int
+    waiting: int
+    max_queue_size: int
+    total_processed: int
+    total_rejected: int
+    last_started_at: datetime | None
 
 
 class SkyQueue:
     """FIFO-очередь задач Stellarium.
 
-    Одновременно выполняется только одна задача (раздел 13 ТЗ).
-    Если ожидающих уже MAX_QUEUE_SIZE — новая задача отклоняется (429).
+    Семантика по разделам 13/17/19 ТЗ: MAX_QUEUE_SIZE — общее число задач
+    в системе (выполняющаяся + ожидающие). 4-я одновременная задача -> 429.
     """
 
     def __init__(self, max_queue_size: int = config.MAX_QUEUE_SIZE):
@@ -36,25 +36,20 @@ class SkyQueue:
         self.last_started_at: datetime | None = None
 
     async def acquire(self) -> bool:
-        """Занять слот. True — задача принята, False — ждать в очереди.
+        """Записаться в очередь. Всегда False — слот берётся в wait_turn().
 
-        Raises QueueFullError, если места в очереди нет.
+        Raises QueueFullError, если задач в системе уже MAX_QUEUE_SIZE.
         """
         async with self._lock:
-            if self._running == 0:
-                self._running = 1
-                self.last_started_at = datetime.now()
-                return True  # выполнится сразу
-            if self._waiting >= self._max_queue_size:
+            total = self._running + self._waiting
+            if total >= self._max_queue_size:
                 self.total_rejected += 1
                 raise QueueFullError()
             self._waiting += 1
-            return False  # встанет в очередь
+            return False
 
     async def wait_turn(self):
-        """Дождаться своего хода (вызывается после acquire() == False)."""
-        # Пока — простая модель: задачи обрабатываются последовательно,
-        # поэтому ждём освобождения единственного слота.
+        """Дождаться своего хода и занять единственный слот выполнения."""
         while True:
             async with self._lock:
                 if self._running == 0:
@@ -62,7 +57,7 @@ class SkyQueue:
                     self._waiting -= 1
                     self.last_started_at = datetime.now()
                     return
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
 
     async def release(self):
         """Освободить слот после завершения задачи."""
