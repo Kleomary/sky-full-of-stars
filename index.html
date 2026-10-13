@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Звёздное небо — панорама неба для любого места, даты и времени</title>
+  <meta name="description" content="Сервис формирует карту звёздного неба для выбранного места, даты и времени: панорама южной стороны неба, поле зрения 180°, на основе Stellarium.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="bg-stars" aria-hidden="true"></canvas>
+
+  <div class="page">
+    <header class="header">
+      <div class="brand">
+        <span class="brand__badge" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="34" height="34">
+            <path d="M40 12a20 20 0 1 0 12 30.5A17 17 0 0 1 40 12z" fill="currentColor"/>
+            <path d="M46 14l1.7 4.3L52 20l-4.3 1.7L46 26l-1.7-4.3L40 20l4.3-1.7z" fill="#ff5fa2"/>
+          </svg>
+        </span>
+        <span class="brand__name">Звёздное небо</span>
+      </div>
+      <p class="tagline">Панорама звёздного неба для выбранного места, даты и&nbsp;времени</p>
+    </header>
+
+    <section class="sky" aria-label="Карта звёздного неба">
+      <div class="sky__circle">
+        <div class="sky__rot">
+          <canvas id="sky-canvas"></canvas>
+        </div>
+        <svg class="sky__ring-text" viewBox="0 0 300 300" aria-hidden="true">
+          <defs>
+            <path id="ring-path" d="M150,150 m-131,0 a131,131 0 1,1 262,0 a131,131 0 1,1 -262,0"/>
+          </defs>
+          <text><textPath href="#ring-path">Карта звёздного неба&#160;&#160;✦&#160;&#160;Карта звёздного неба&#160;&#160;✦</textPath></text>
+        </svg>
+      </div>
+      <div class="sky__meta">
+        <p class="sky__meta-date" id="meta-date">&nbsp;</p>
+        <p class="sky__meta-place" id="meta-place">&nbsp;</p>
+        <p class="sky__meta-coords" id="meta-coords">&nbsp;</p>
+      </div>
+    </section>
+
+    <main class="content">
+      <form id="sky-form" novalidate>
+        <p class="section-label">Место, дата и время</p>
+
+        <div class="field field--place">
+          <div class="pill" id="place-city-pill">
+            <label class="visually-hidden" for="place-city">Место наблюдения — город из списка</label>
+            <select id="place-city"></select>
+            <svg class="pill__icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M10 18s-6-5.1-6-9.6A6 6 0 0 1 16 8.4C16 12.9 10 18 10 18z"/>
+              <circle cx="10" cy="8.4" r="2.2"/>
+            </svg>
+          </div>
+
+          <div class="pill hidden" id="place-custom-pill">
+            <label class="visually-hidden" for="place-coords">Место наблюдения — координаты или ссылка на карту</label>
+            <input id="place-coords" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="56.858398, 35.910746 или ссылка на карту">
+            <svg class="pill__icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M10 18s-6-5.1-6-9.6A6 6 0 0 1 16 8.4C16 12.9 10 18 10 18z"/>
+              <circle cx="10" cy="8.4" r="2.2"/>
+            </svg>
+          </div>
+
+          <div class="place-extra hidden" id="place-extra">
+            <button type="button" class="btn-link" id="btn-yandex">
+              Найти в Яндекс Картах
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3h7v7M13 3l-6.5 6.5M12 9.5V13H3V4h3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="btn-link btn-link--muted" id="btn-back-city">← Выбрать город из списка</button>
+          </div>
+
+          <p class="hint" id="place-hint"></p>
+          <p class="error" id="place-error" role="alert" hidden></p>
+        </div>
+
+        <div class="field-row">
+          <div class="field field--date">
+            <div class="pill">
+              <label class="visually-hidden" for="date-input">Дата, ДД.ММ.ГГГГ</label>
+              <input id="date-input" type="text" inputmode="numeric" autocomplete="off"
+                     placeholder="ДД.ММ.ГГГГ" maxlength="10">
+              <svg class="pill__icon" viewBox="0 0 20 20" aria-hidden="true">
+                <rect x="3" y="5" width="14" height="12" rx="2.5" fill="none"/>
+                <path d="M3 9.2h14M7.5 3v3.4M12.5 3v3.4" fill="none"/>
+              </svg>
+            </div>
+            <p class="error" id="date-error" role="alert" hidden></p>
+          </div>
+
+          <div class="field field--time">
+            <div class="pill">
+              <label class="visually-hidden" for="time-input">Время, ЧЧ:ММ</label>
+              <input id="time-input" type="text" inputmode="numeric" autocomplete="off"
+                     placeholder="ЧЧ:ММ" maxlength="5">
+              <svg class="pill__icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="10" r="7" fill="none"/>
+                <path d="M10 6v4l2.8 1.8" fill="none"/>
+              </svg>
+            </div>
+            <p class="error" id="time-error" role="alert" hidden></p>
+          </div>
+        </div>
+
+        <button type="submit" class="submit" id="btn-show">Показать небо</button>
+        <p class="form-note">Формируется сценарий для Stellarium (.ssc): панорама южной стороны неба, поле зрения 180°.</p>
+      </form>
+
+      <section class="result" id="result" aria-live="polite" hidden>
+        <h2 class="result__title">Сценарий для Stellarium готов</h2>
+        <p class="result__file">Файл <code id="result-file"></code> скачан.</p>
+        <dl class="result__summary" id="result-summary"></dl>
+        <ol class="result__steps">
+          <li>Откройте файл в Stellarium: двойной щелчок по файлу или меню <b>Сценарии</b> → выбрать сценарий → <b>Запустить</b>.</li>
+          <li>Дождитесь, пока установятся место, дата и вид на юг с полем зрения 180°.</li>
+          <li>Разверните окно Stellarium на весь экран и нажмите <b>Ctrl+S</b> (в macOS — <b>⌘S</b>) для сохранения PNG — размер снимка равен размеру окна.</li>
+        </ol>
+        <button type="button" class="btn-secondary" id="btn-redownload">Скачать файл ещё раз</button>
+      </section>
+
+      <div class="notifications" id="notifications" aria-live="polite"></div>
+    </main>
+
+    <footer class="footer">
+      <p>Изображение неба строится в Stellarium. Этап 1 — генерация .ssc-сценария в браузере; на этапе 2 сервер будет возвращать готовый PNG 1920×1080.</p>
+    </footer>
+  </div>
+
+  <noscript>
+    <p style="text-align:center;padding:24px">Для работы сервиса включите JavaScript.</p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>

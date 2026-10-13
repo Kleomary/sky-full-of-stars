@@ -1,0 +1,21 @@
+{
+  "cities": [
+    { "name": "Москва",           "slug": "moscow",           "lat": 55.7558,   "lon": 37.6173,   "tz": "Europe/Moscow" },
+    { "name": "Санкт-Петербург",  "slug": "saint-petersburg", "lat": 59.9311,   "lon": 30.3609,   "tz": "Europe/Moscow" },
+    { "name": "Новосибирск",      "slug": "novosibirsk",      "lat": 55.0084,   "lon": 82.9357,   "tz": "Asia/Novosibirsk" },
+    { "name": "Екатеринбург",     "slug": "yekaterinburg",    "lat": 56.8389,   "lon": 60.6057,   "tz": "Asia/Yekaterinburg" },
+    { "name": "Казань",           "slug": "kazan",            "lat": 55.7963,   "lon": 49.1088,   "tz": "Europe/Moscow" },
+    { "name": "Красноярск",       "slug": "krasnoyarsk",      "lat": 56.0153,   "lon": 92.8932,   "tz": "Asia/Krasnoyarsk" },
+    { "name": "Нижний Новгород",  "slug": "nizhny-novgorod",  "lat": 56.3269,   "lon": 44.0059,   "tz": "Europe/Moscow" },
+    { "name": "Челябинск",        "slug": "chelyabinsk",      "lat": 55.1644,   "lon": 61.4368,   "tz": "Asia/Yekaterinburg" },
+    { "name": "Уфа",              "slug": "ufa",               "lat": 54.7388,   "lon": 55.9721,   "tz": "Asia/Yekaterinburg" },
+    { "name": "Краснодар",        "slug": "krasnodar",        "lat": 45.0355,   "lon": 38.9753,   "tz": "Europe/Moscow" },
+    { "name": "Самара",           "slug": "samara",           "lat": 53.1959,   "lon": 50.1002,   "tz": "Europe/Samara" },
+    { "name": "Ростов-на-Дону",   "slug": "rostov-na-donu",   "lat": 47.2357,   "lon": 39.7015,   "tz": "Europe/Moscow" },
+    { "name": "Омск",             "slug": "omsk",             "lat": 54.9885,   "lon": 73.3242,   "tz": "Asia/Omsk" },
+    { "name": "Воронеж",          "slug": "voronezh",         "lat": 51.6720,   "lon": 39.1843,   "tz": "Europe/Moscow" },
+    { "name": "Пермь",            "slug": "perm",             "lat": 58.0105,   "lon": 56.2502,   "tz": "Asia/Yekaterinburg" },
+    { "name": "Волгоград",        "slug": "volgograd",        "lat": 48.7080,   "lon": 44.5133,   "tz": "Europe/Volgograd" },
+    { "name": "Тверь",            "slug": "tver",             "lat": 56.858398, "lon": 35.910746, "tz": "Europe/Moscow" }
+  ]
+}
