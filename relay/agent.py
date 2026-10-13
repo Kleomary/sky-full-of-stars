@@ -18,10 +18,20 @@ async def handle(ws, msg):
     req_id = msg.get("id", "")
     try:
         async with httpx.AsyncClient(timeout=25) as client:
+            # QtWebApp (Stellarium) требует имя заголовка Authorization
+            # в точном регистре; relay/HTTP может отдавать его в любом.
+            hdrs = {}
+            for k, v in (msg.get("headers") or {}).items():
+                if k.lower() == "authorization":
+                    hdrs["Authorization"] = v
+                elif k.lower() == "content-type":
+                    hdrs["Content-Type"] = v
+                else:
+                    hdrs[k] = v
             r = await client.request(
                 msg.get("method", "GET"),
                 STELLARIUM + msg.get("path", "/"),
-                headers=msg.get("headers") or {},
+                headers=hdrs,
                 content=base64.b64decode(msg.get("body", "")) or None,
             )
             await ws.send(json.dumps({
