@@ -625,6 +625,9 @@ function setSubmitBusy(busy) {
 
 function requestSky(req) {
   setSubmitBusy(true);
+  el.result.hidden = true;
+  el.skyImage.hidden = true;
+  el.downloadPng.hidden = true;
   notify("Рендерим небо… первый запрос после паузы может занять до минуты", "success");
 
   var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
