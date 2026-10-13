@@ -29,7 +29,6 @@ def build_sky_script(latitude, longitude, utc_dt):
         "SolarSystem.setFlagPlanets(true)",
         "ConstellationMgr.setFlagLabels(false)",
         "core.setGuiVisible(false)",
-        "LandscapeMgr.setFlagCardinalsPoints(false)",
         "StelMovementMgr.lookSouth()",
         "StelMovementMgr.zoomTo(180, 0)",
         "core.wait(0.5)",
