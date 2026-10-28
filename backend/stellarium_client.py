@@ -33,9 +33,9 @@ def build_sky_script(latitude, longitude, utc_dt):
         "core.setGuiVisible(false)",
         "StelMovementMgr.lookSouth()",
         "StelMovementMgr.zoomTo(180, 0)",
-        "core.wait(5)",
+        "core.wait(10)",
         "StelMovementMgr.lookSouth()",
-        "core.wait(2)",
+        "core.wait(3)",
     ]
     return "; ".join(parts)
 
